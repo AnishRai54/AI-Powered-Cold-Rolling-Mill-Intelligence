@@ -1,0 +1,396 @@
+{
+  "training_date_utc": "2026-09-27T22:56:25.517726+00:00",
+  "dataset_version": "tcm5_dataset_1.csv, tcm5_dataset_2.csv, tcm5_dataset_3.csv, tcm5_dataset_4.csv, tcm5_dataset_5.csv, tcm5_dataset_6.csv",
+  "validation_strategy": "Chronological batch/order holdout: last 20% held out; 3-fold stratified CV only on training subset.",
+  "training_parameters": {
+    "random_state": 42,
+    "holdout_fraction": 0.2,
+    "classification_threshold": 0.5,
+    "cross_validation_enabled": true,
+    "cv_sample_cap": 30000,
+    "autoencoder_architecture": [
+      64,
+      16,
+      64
+    ],
+    "autoencoder_normal_training_cap": 18000,
+    "autoencoder_threshold_quantile": 0.995
+  },
+  "target": "anomaly_present",
+  "fault_label": "fault_family",
+  "features": [
+    "thickness_entry",
+    "thickness_exit",
+    "width",
+    "ys_entry",
+    "ys_exit",
+    "work_roll_diam_1",
+    "work_roll_diam_2",
+    "work_roll_diam_3",
+    "work_roll_diam_4",
+    "work_roll_diam_5",
+    "work_roll_mileage_1",
+    "work_roll_mileage_2",
+    "work_roll_mileage_3",
+    "work_roll_mileage_4",
+    "work_roll_mileage_5",
+    "reduction_1",
+    "reduction_2",
+    "reduction_3",
+    "reduction_4",
+    "reduction_5",
+    "tension_0",
+    "tension_1",
+    "tension_2",
+    "tension_3",
+    "tension_4",
+    "tension_5",
+    "roll_speed_1",
+    "roll_speed_2",
+    "roll_speed_3",
+    "roll_speed_4",
+    "roll_speed_5",
+    "force_1",
+    "force_2",
+    "force_3",
+    "force_4",
+    "force_5",
+    "torque_1",
+    "torque_2",
+    "torque_3",
+    "torque_4",
+    "torque_5",
+    "gap_1",
+    "gap_2",
+    "gap_3",
+    "gap_4",
+    "gap_5",
+    "motor_power_1",
+    "motor_power_2",
+    "motor_power_3",
+    "motor_power_4",
+    "motor_power_5",
+    "force_mean",
+    "force_max",
+    "torque_mean",
+    "torque_max",
+    "motor_power_mean",
+    "motor_power_max",
+    "roll_speed_mean",
+    "roll_speed_max",
+    "work_roll_mileage_mean",
+    "work_roll_mileage_max",
+    "tension_mean",
+    "tension_max",
+    "total_thickness_reduction",
+    "total_reduction_ratio"
+  ],
+  "rows": 120027,
+  "train_rows": 96021,
+  "test_rows": 24006,
+  "class_distribution": {
+    "0": 114056,
+    "1": 5971
+  },
+  "comparison": [
+    {
+      "model": "Random Forest",
+      "accuracy": 0.97509,
+      "balanced_accuracy": 0.7401,
+      "precision": 0.98375,
+      "recall": 0.4806,
+      "f1": 0.64573,
+      "macro_f1": 0.81641,
+      "weighted_f1": 0.97097,
+      "roc_auc": 0.90518,
+      "pr_auc": 0.65554,
+      "cv_f1_mean": 0.81211,
+      "cv_f1_std": 0.00942
+    },
+    {
+      "model": "Extra Trees",
+      "accuracy": 0.96822,
+      "balanced_accuracy": 0.72309,
+      "precision": 0.78321,
+      "recall": 0.45238,
+      "f1": 0.5735,
+      "macro_f1": 0.7785,
+      "weighted_f1": 0.96413,
+      "roc_auc": 0.90805,
+      "pr_auc": 0.60512,
+      "cv_f1_mean": 0.78514,
+      "cv_f1_std": 0.00247
+    },
+    {
+      "model": "LightGBM",
+      "accuracy": 0.88944,
+      "balanced_accuracy": 0.82716,
+      "precision": 0.26543,
+      "recall": 0.75838,
+      "f1": 0.39323,
+      "macro_f1": 0.66621,
+      "weighted_f1": 0.91339,
+      "roc_auc": 0.9141,
+      "pr_auc": 0.60248,
+      "cv_f1_mean": 0.90465,
+      "cv_f1_std": 0.00909
+    },
+    {
+      "model": "Logistic Regression",
+      "accuracy": 0.86228,
+      "balanced_accuracy": 0.86277,
+      "precision": 0.23705,
+      "recall": 0.86332,
+      "f1": 0.37196,
+      "macro_f1": 0.64731,
+      "weighted_f1": 0.89665,
+      "roc_auc": 0.94094,
+      "pr_auc": 0.75594,
+      "cv_f1_mean": 0.62503,
+      "cv_f1_std": 0.01012
+    }
+  ],
+  "best_model": "Random Forest",
+  "best_metrics": {
+    "model": "Random Forest",
+    "accuracy": 0.97509,
+    "balanced_accuracy": 0.7401,
+    "precision": 0.98375,
+    "recall": 0.4806,
+    "f1": 0.64573,
+    "macro_f1": 0.81641,
+    "weighted_f1": 0.97097,
+    "roc_auc": 0.90518,
+    "pr_auc": 0.65554,
+    "cv_f1_mean": 0.81211,
+    "cv_f1_std": 0.00942
+  },
+  "fault_classification": {
+    "available": true,
+    "model": "Extra Trees multiclass fault-family classifier",
+    "classes": [
+      "Bearing",
+      "Electric",
+      "Reduction",
+      "Work Roll"
+    ],
+    "accuracy": 0.75926,
+    "macro_f1": 0.75065,
+    "weighted_f1": 0.75517,
+    "report": {
+      "Bearing": {
+        "precision": 0.75625,
+        "recall": 0.5525114155251142,
+        "f1-score": 0.6385224274406333,
+        "support": 219.0
+      },
+      "Electric": {
+        "precision": 0.6741573033707865,
+        "recall": 0.9118541033434651,
+        "f1-score": 0.7751937984496124,
+        "support": 329.0
+      },
+      "Reduction": {
+        "precision": 0.8849206349206349,
+        "recall": 0.8446969696969697,
+        "f1-score": 0.8643410852713178,
+        "support": 264.0
+      },
+      "Work Roll": {
+        "precision": 0.7833935018050542,
+        "recall": 0.6739130434782609,
+        "f1-score": 0.7245409015025042,
+        "support": 322.0
+      },
+      "accuracy": 0.7592592592592593,
+      "macro avg": {
+        "precision": 0.7746803600241189,
+        "recall": 0.7457438830109524,
+        "f1-score": 0.7506495531660169,
+        "support": 1134.0
+      },
+      "weighted avg": {
+        "precision": 0.7700954656166348,
+        "recall": 0.7592592592592593,
+        "f1-score": 0.7551705362388497,
+        "support": 1134.0
+      }
+    }
+  },
+  "classification_report": {
+    "0": {
+      "precision": 0.9748848712263346,
+      "recall": 0.9996065057712487,
+      "f1-score": 0.9870909247906053,
+      "support": 22872.0
+    },
+    "1": {
+      "precision": 0.983754512635379,
+      "recall": 0.48059964726631393,
+      "f1-score": 0.6457345971563981,
+      "support": 1134.0
+    },
+    "accuracy": 0.9750895609430975,
+    "macro avg": {
+      "precision": 0.9793196919308569,
+      "recall": 0.7401030765187813,
+      "f1-score": 0.8164127609735017,
+      "support": 24006.0
+    },
+    "weighted avg": {
+      "precision": 0.9753038570364595,
+      "recall": 0.9750895609430975,
+      "f1-score": 0.9709658695736934,
+      "support": 24006.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      22863,
+      9
+    ],
+    [
+      589,
+      545
+    ]
+  ],
+  "feature_importance": [
+    {
+      "feature": "reduction_1",
+      "importance": 0.10042522783909237
+    },
+    {
+      "feature": "motor_power_max",
+      "importance": 0.08459556840810745
+    },
+    {
+      "feature": "torque_4",
+      "importance": 0.05203628898934509
+    },
+    {
+      "feature": "torque_3",
+      "importance": 0.04847647985698611
+    },
+    {
+      "feature": "motor_power_1",
+      "importance": 0.046448540579173705
+    },
+    {
+      "feature": "torque_1",
+      "importance": 0.04595814076680658
+    },
+    {
+      "feature": "torque_5",
+      "importance": 0.03227069917426211
+    },
+    {
+      "feature": "torque_max",
+      "importance": 0.028969553477480266
+    },
+    {
+      "feature": "force_mean",
+      "importance": 0.02689807037569923
+    },
+    {
+      "feature": "motor_power_4",
+      "importance": 0.022432435739964996
+    },
+    {
+      "feature": "force_1",
+      "importance": 0.020671823960357764
+    },
+    {
+      "feature": "gap_1",
+      "importance": 0.01972285661416863
+    },
+    {
+      "feature": "force_max",
+      "importance": 0.019411290710517004
+    },
+    {
+      "feature": "torque_mean",
+      "importance": 0.01911459937503435
+    },
+    {
+      "feature": "reduction_5",
+      "importance": 0.019102978606073892
+    },
+    {
+      "feature": "torque_2",
+      "importance": 0.018495310201563666
+    },
+    {
+      "feature": "reduction_4",
+      "importance": 0.018232577895460355
+    },
+    {
+      "feature": "motor_power_3",
+      "importance": 0.017698174641687138
+    },
+    {
+      "feature": "force_3",
+      "importance": 0.01669625938183174
+    },
+    {
+      "feature": "force_4",
+      "importance": 0.01542663984001269
+    },
+    {
+      "feature": "force_5",
+      "importance": 0.014900624686916069
+    },
+    {
+      "feature": "reduction_3",
+      "importance": 0.014647698615920648
+    },
+    {
+      "feature": "motor_power_2",
+      "importance": 0.014443121763339754
+    },
+    {
+      "feature": "tension_4",
+      "importance": 0.014105950744504648
+    },
+    {
+      "feature": "tension_max",
+      "importance": 0.013889436859558886
+    },
+    {
+      "feature": "force_2",
+      "importance": 0.01315342249979204
+    },
+    {
+      "feature": "tension_3",
+      "importance": 0.012853665919840381
+    },
+    {
+      "feature": "motor_power_5",
+      "importance": 0.012291660997755872
+    },
+    {
+      "feature": "motor_power_mean",
+      "importance": 0.012289649046336738
+    },
+    {
+      "feature": "reduction_2",
+      "importance": 0.011376157630864525
+    }
+  ],
+  "autoencoder": {
+    "model": "MLP reconstruction autoencoder",
+    "threshold": 2.022191164530141,
+    "metrics": {
+      "accuracy": 0.9526,
+      "balanced_accuracy": 0.51584,
+      "precision": 0.475,
+      "recall": 0.03351,
+      "f1": 0.0626,
+      "macro_f1": 0.51914,
+      "weighted_f1": 0.93255,
+      "roc_auc": 0.75431,
+      "pr_auc": 0.15871
+    },
+    "normal_training_rows": 18000,
+    "note": "No timestamp exists, so LSTM/GRU sequence modelling was not scientifically supported."
+  }
+}
