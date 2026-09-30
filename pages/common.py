@@ -13,6 +13,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from components.cards import metric_grid, status_badge
+from components.theme import inject_theme as inject_industrial_theme
 from src.data_loader import load_unified_data, profile_dataset
 from src.maintenance import alerts_from_frame, health_score, recommended_area, risk_priority
 from src.preprocessing import build_features, derive_targets
@@ -45,27 +47,8 @@ def fault_model() -> Any | None:
 
 
 def inject_theme() -> None:
-    st.markdown("""<style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-    :root {--canvas:#071019;--surface:#0d1b27;--line:rgba(139,181,196,.17);--text:#ecf5f7;--muted:#91aab5;--cyan:#64e6de;--blue:#74b8ff;--orange:#ffad5b;--green:#6fe0a9;}
-    .stApp {background:radial-gradient(circle at 86% -8%,rgba(49,125,154,.22),transparent 28rem),radial-gradient(circle at 9% 28%,rgba(24,97,114,.15),transparent 24rem),var(--canvas);color:var(--text);font-family:'Manrope',sans-serif;}
-    [data-testid="stHeader"] {background:rgba(7,16,25,.66);backdrop-filter:blur(14px);}
-    [data-testid="stSidebar"] {background:linear-gradient(180deg,#0c1a26 0%,#08131d 100%);border-right:1px solid var(--line);}
-    [data-testid="stSidebar"] > div:first-child {padding-top:1.25rem;}.block-container {max-width:1500px;padding-top:1.35rem;padding-bottom:2rem;}
-    h1,h2,h3 {color:var(--text)!important;letter-spacing:-.035em;} h1{font-weight:800!important;} h2{font-weight:750!important;}p,label,.stCaption {color:var(--muted);}
-    [data-testid="stRadio"] label {border-radius:9px;padding:.33rem .52rem;margin:.05rem 0;transition:.2s ease;font-size:.89rem;}[data-testid="stRadio"] label:hover {background:rgba(100,230,222,.08);color:var(--text);}[data-testid="stRadio"] label:has(input:checked) {background:linear-gradient(90deg,rgba(100,230,222,.16),rgba(116,184,255,.08));border:1px solid rgba(100,230,222,.15);}[data-testid="stRadio"] label:has(input:checked) p {color:#e9ffff;font-weight:700;}
-    .brand {padding:.3rem .15rem 1.35rem;display:flex;gap:.72rem;align-items:center}.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--cyan),var(--blue));box-shadow:0 0 25px rgba(100,230,222,.28);display:grid;place-items:center;color:#06202a;font-size:18px;font-weight:900}.brand-title{font-size:.84rem;font-weight:800;letter-spacing:.13em;color:#effbfc}.brand-sub{font-family:'DM Mono';font-size:.61rem;letter-spacing:.09em;color:#7f9da9;margin-top:2px}
-    .hero {position:relative;overflow:hidden;padding:2rem 2.2rem 2.05rem;border-radius:22px;background:linear-gradient(118deg,rgba(15,43,59,.98),rgba(14,77,96,.92) 60%,rgba(167,83,35,.84));border:1px solid rgba(139,226,222,.19);box-shadow:0 20px 45px rgba(0,0,0,.20);margin-bottom:1.2rem;}.hero:after{content:'';position:absolute;right:-70px;top:-120px;width:380px;height:380px;border:1px solid rgba(169,244,236,.17);border-radius:50%;box-shadow:0 0 0 44px rgba(169,244,236,.055),0 0 0 88px rgba(169,244,236,.035)}.hero h1 {position:relative;margin:.55rem 0 0;color:#fff;font-size:clamp(1.7rem,3.1vw,2.65rem);line-height:1.12;max-width:790px;}.hero p {position:relative;margin:.7rem 0 0;color:#d9f1f4;font-size:1rem;max-width:740px;line-height:1.65;}.eyebrow{position:relative;font-family:'DM Mono';font-size:.68rem;letter-spacing:.13em;color:#bcefed;text-transform:uppercase}.live-pill{position:relative;display:inline-flex;align-items:center;gap:.42rem;padding:.32rem .62rem;border-radius:99px;background:rgba(3,21,29,.28);border:1px solid rgba(222,255,251,.18);font-family:'DM Mono';font-size:.66rem;color:#e5ffff}.live-dot{height:6px;width:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 11px var(--cyan)}
-    .kpi {position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(18,41,55,.96),rgba(10,25,36,.96));border:1px solid var(--line);border-radius:16px;padding:1.08rem 1.1rem;min-height:121px;box-shadow:0 10px 22px rgba(0,0,0,.10);transition:transform .2s ease,border-color .2s ease}.kpi:hover{transform:translateY(-3px);border-color:rgba(100,230,222,.38)}.kpi:before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--cyan),var(--blue));}.kpi label{display:block;color:#8ea8b4;font-family:'DM Mono';font-size:.65rem;letter-spacing:.08em;text-transform:uppercase}.kpi strong{display:block;font-size:1.72rem;letter-spacing:-.045em;color:#f4ffff;margin:.48rem 0 .26rem;font-weight:800}.kpi span{color:#79c9bb;font-size:.72rem;line-height:1.35;display:block}
-    .section-title{display:flex;align-items:center;justify-content:space-between;margin:1.55rem 0 .6rem}.section-title h3{font-size:1rem!important;letter-spacing:-.01em;margin:0}.section-title span{font-family:'DM Mono';font-size:.65rem;color:#6f919f;letter-spacing:.08em;text-transform:uppercase}.section-rule{height:1px;background:linear-gradient(90deg,var(--line),transparent);margin-bottom:.75rem}
-    .badge {display:inline-block;padding:.32rem .68rem;border-radius:99px;font-family:'DM Mono';letter-spacing:.05em;font-weight:700;font-size:.67rem}.low{background:rgba(43,151,114,.18);border:1px solid rgba(111,224,169,.24);color:#9bf0c3}.medium{background:rgba(203,146,31,.18);border:1px solid rgba(255,204,106,.23);color:#ffe2a0}.high,.critical{background:rgba(210,73,74,.18);border:1px solid rgba(255,148,148,.23);color:#ffb5b5}
-    .process {display:flex;align-items:center;gap:8px;overflow-x:auto;padding:.45rem 0 1.1rem}.stand{position:relative;min-width:116px;text-align:left;border:1px solid var(--line);border-radius:13px;padding:.85rem .8rem;background:linear-gradient(145deg,#102432,#0c1b27);font-size:.83rem;font-weight:700}.stand:before{content:'';display:block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(111,224,169,.8);margin-bottom:.45rem}.arrow{color:#4d7889;font-size:18px}.muted{color:#7f9ba7;font-family:'DM Mono';font-size:.61rem}.footer{border-top:1px solid var(--line);color:#718c97;text-align:center;padding:1.25rem 0 .15rem;margin-top:1rem;font-family:'DM Mono';font-size:.68rem;letter-spacing:.04em}
-    [data-testid="stMetric"]{padding:1rem;border-radius:14px;background:var(--surface);border:1px solid var(--line)} [data-testid="stMetricLabel"]{font-family:'DM Mono';font-size:.67rem;text-transform:uppercase;letter-spacing:.06em;color:#91aab5}[data-testid="stMetricValue"]{font-weight:800;color:#edf9fb}.stTabs [data-baseweb="tab-list"]{gap:.35rem;border-bottom:1px solid var(--line)}.stTabs [data-baseweb="tab"]{height:38px;border-radius:8px 8px 0 0;padding:0 14px;color:#8fa9b4}.stTabs [aria-selected="true"]{background:rgba(100,230,222,.10)!important;color:#dffffd!important}.stButton>button,[data-testid="stDownloadButton"]>button{border-radius:9px;font-weight:700;border:1px solid rgba(100,230,222,.33);background:linear-gradient(135deg,#167d87,#216c9f);color:white;box-shadow:0 6px 16px rgba(16,107,122,.20)}.stButton>button:hover,[data-testid="stDownloadButton"]>button:hover{border-color:var(--cyan);color:white;box-shadow:0 7px 24px rgba(100,230,222,.19)}[data-testid="stDataFrame"]{border:1px solid var(--line);border-radius:12px;overflow:hidden}.stAlert{border-radius:12px}.js-plotly-plot .plotly .modebar{background:rgba(10,25,36,.65)!important;border-radius:8px}
-    .page-header{padding:.35rem 0 1.1rem;margin-bottom:1.2rem;border-bottom:1px solid var(--line)}.page-header .eyebrow{color:var(--cyan)}.page-header h1{font-size:2.15rem!important;line-height:1.18;margin:.42rem 0 .35rem;letter-spacing:0!important}.page-header p{max-width:820px;margin:0;line-height:1.6}.hero-layout{align-items:center;margin-bottom:1.1rem}.hero-copy{padding:1.8rem 0 1.9rem;border-bottom:1px solid var(--line)}.hero-copy h1{font-size:2.55rem!important;line-height:1.12;letter-spacing:0!important;margin:.55rem 0}.hero-copy p{max-width:680px;line-height:1.65;color:#c4d9df}.hero-image img{height:280px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
-    h1,h2,h3{letter-spacing:0!important} [data-testid="stVerticalBlock"]{gap:1rem} [data-testid="stTextInput"] input,[data-testid="stNumberInput"] input,[data-testid="stSelectbox"]>div,[data-testid="stMultiSelect"]>div{border-radius:8px} [data-testid="stTextInput"] input:focus,[data-testid="stNumberInput"] input:focus{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan)}
-    [data-testid="stDataFrame"],[data-testid="stTable"]{border-radius:8px} .stButton>button,[data-testid="stDownloadButton"]>button{min-height:2.55rem} .stTabs [data-baseweb="tab"]{letter-spacing:0}
-    @media(max-width:760px){.block-container{padding-top:1rem}.page-header h1{font-size:1.8rem!important}.hero-copy h1{font-size:2rem!important}.hero-image img{height:190px}.hero-copy{padding:1rem 0}}
-    </style>""", unsafe_allow_html=True)
+    """Backward-compatible theme entry point used by the Streamlit app."""
+    inject_industrial_theme()
 
 
 def require_data() -> pd.DataFrame | None:
@@ -116,6 +99,10 @@ def page_header(title: str, section: str, description: str) -> None:
         f'<h1>{title}</h1><p>{description}</p></header>',
         unsafe_allow_html=True,
     )
+def _navigate_primary(page: str) -> None:
+    """Switch the shell navigation from the dashboard's explicit CTA buttons."""
+    st.session_state["primary_navigation"] = page
+    st.session_state["workspace_tools"] = "None"
 
 
 def section_heading(title: str, label: str) -> None:
@@ -292,7 +279,8 @@ def training() -> None:
                 fault_model.clear()
                 st.success(f"Saved best model: {result['best_model']}")
                 st.dataframe(pd.DataFrame(result['comparison']), use_container_width=True)
-            except Exception as exc: st.exception(exc)
+            except Exception as exc:
+                st.error(f"Model training could not complete: {exc}")
     meta = metadata()
     if meta: st.dataframe(pd.DataFrame(meta['comparison']), use_container_width=True)
 
@@ -320,12 +308,18 @@ def reports() -> None:
     meta=metadata(); profile=profile_dataset(df)
     report={"dataset_summary": profile, "model_metadata": meta, "limitations": ["Dataset has no timestamp; chronological order is inferred from source batch and row.", "No continuous quality target was supplied; no quality-regression model is claimed.", "Source files appear to be simulated/experimental rolling data and must not be represented as plant telemetry."], "safety_disclaimer": "AI decision-support prototype; not a substitute for plant safety procedures, OEM limits, or engineering approval."}
     st.download_button("Download JSON technical report", json.dumps(report, indent=2, default=str), "cold_rolling_ai_report.json", "application/json")
-    csv = df.head(50000).to_csv(index=False).encode(); st.download_button("Download processed data sample (CSV)", csv, "cold_rolling_processed_sample.csv", "text/csv")
-    spreadsheet = io.BytesIO()
-    with pd.ExcelWriter(spreadsheet, engine="openpyxl") as writer:
-        df.head(50000).to_excel(writer, sheet_name="processed_sample", index=False)
-        pd.DataFrame(meta.get("comparison", []) if meta else []).to_excel(writer, sheet_name="model_comparison", index=False)
-    st.download_button("Download processed data sample (Excel)", spreadsheet.getvalue(), "cold_rolling_processed_sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    # Keep exports useful but bounded so opening this page stays responsive on Community Cloud.
+    sample = df.head(10000)
+    csv = sample.to_csv(index=False).encode(); st.download_button("Download processed data sample (CSV)", csv, "cold_rolling_processed_sample.csv", "text/csv")
+    if st.button("Prepare Excel export", key="prepare_excel_export"):
+        with st.spinner("Preparing the bounded Excel export..."):
+            spreadsheet = io.BytesIO()
+            with pd.ExcelWriter(spreadsheet, engine="openpyxl") as writer:
+                sample.to_excel(writer, sheet_name="processed_sample", index=False)
+                pd.DataFrame(meta.get("comparison", []) if meta else []).to_excel(writer, sheet_name="model_comparison", index=False)
+        st.download_button("Download processed data sample (Excel)", spreadsheet.getvalue(), "cold_rolling_processed_sample.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    else:
+        st.caption("Excel generation is on demand to keep the report page responsive.")
     st.info("CSV, Excel, and JSON downloads are enabled. PDF requires a reporting renderer and is intentionally not generated with unverified layout dependencies.")
 
 
@@ -395,3 +389,290 @@ def about() -> None:
     )
     st.plotly_chart(mind_map, use_container_width=True, config={"displayModeBar": False})
     st.info("The supplied files have no provenance confirming real plant telemetry. No continuous quality target or timestamp is available, so the app does not claim quality prediction or time-based forecasting. Outputs are decision support only and do not replace safety procedures, OEM limits, or engineering approval.")
+
+
+# Premium task views.  They intentionally reuse the cached data and serialized
+# artifacts above; presentation changes do not alter the project's ML methods.
+def hero() -> None:
+    st.markdown(
+        '''<section class="hero"><div class="eyebrow">Tandem cold rolling · intelligence layer</div>
+        <h1>AI-Powered Cold Rolling Mill Intelligence</h1>
+        <p>Dataset intelligence, anomaly detection, explainability, and predictive-maintenance decision support for a five-stand tandem cold rolling mill.</p>
+        <span class="live-pill"><i class="live-dot"></i> MODEL / DATASET VIEW · NOT LIVE PLANT CONNECTED</span></section>''',
+        unsafe_allow_html=True,
+    )
+    action_a, action_b, _ = st.columns((1, 1, 3))
+    action_a.button("Explore Mill Intelligence", key="hero_explore", on_click=_navigate_primary, args=("Mill Intelligence",))
+    action_b.button("Run Prediction", key="hero_prediction", on_click=_navigate_primary, args=("What-If Simulation",))
+
+
+def _predict_frame(frame: pd.DataFrame, meta: dict[str, Any], bundle: tuple[Any, Any]) -> dict[str, Any]:
+    """Run the existing saved artifacts for one frame and return display values."""
+    classifier, auto = bundle
+    values = build_features(frame).reindex(columns=meta["features"])
+    probability = float(classifier.predict_proba(values)[0, list(classifier.classes_).index(1)])
+    error = np.nan
+    if auto:
+        matrix = auto["preprocessor"].transform(values)
+        matrix = matrix.toarray() if hasattr(matrix, "toarray") else matrix
+        error = float(auto["detector"].score_samples(matrix)[0])
+    health = health_score(probability, error if not np.isnan(error) else None, meta.get("autoencoder", {}).get("threshold"))
+    family = "Normal operating pattern"
+    multiclass = fault_model()
+    if probability >= .5 and multiclass is not None:
+        family = str(multiclass.predict(values)[0])
+    return {"probability": probability, "error": error, "health": health, "priority": risk_priority(health), "family": family, "values": values}
+
+
+def dashboard() -> None:
+    df = require_data()
+    if df is None:
+        return
+    hero()
+    current = recent_prediction(df)
+    profile = profile_dataset(df)
+    metric_grid([
+        ("Overall mill health", "—" if np.isnan(current["health"]) else f"{current['health']:.1f}/100", "Project-defined health indicator", ""),
+        ("Anomaly risk", "—" if np.isnan(current["probability"]) else f"{current['probability']:.1%}", "Latest-record model probability", "warning" if current["probability"] >= .5 else ""),
+        ("Latest model status", current["status"], "Saved classifier output", "danger" if current["status"] == "ANOMALY" else ""),
+        ("Labelled events", f"{int(df['anomaly_present'].sum()):,}", "Across supplied local batches", ""),
+    ])
+    section_heading("Tandem mill flow", "five-stand process context")
+    cards = ["Entry coil"] + [f"Stand {i}" for i in range(1, 6)] + ["Exit coil"]
+    flow = "".join(f'<div class="stand">{card}<br><small class="muted">dataset-driven</small></div>' + ("" if index == len(cards) - 1 else '<div class="arrow">→</div>') for index, card in enumerate(cards))
+    st.markdown(f'<div class="process">{flow}</div>', unsafe_allow_html=True)
+    view = df.tail(min(800, len(df))).copy()
+    view["record"] = np.arange(len(view))
+    available = [column for group in feature_groups(df).values() for column in group]
+    section_heading("Operational signals", "latest 800 observations")
+    left, right = st.columns((1.35, 1), gap="large")
+    if available:
+        left.plotly_chart(polish_chart(px.line(view, x="record", y=available[:3], title="Recent process-variable trend", color_discrete_sequence=["#64e6de", "#74b8ff", "#ffad5b"])), use_container_width=True)
+    right.plotly_chart(polish_chart(px.scatter(view, x="record", y="anomaly_present", color="fault_family", title="Dataset-labelled anomaly timeline", color_discrete_sequence=["#6fe0a9", "#ffad5b", "#ff7b7b", "#b69cff", "#74b8ff"])), use_container_width=True)
+    st.caption(f"Model / Dataset View · {profile['rows']:,} records from {len(profile['source_files'])} source batches. No timestamp is supplied, so record sequence is observation order only.")
+
+
+def quality_prediction() -> None:
+    """Show the honest quality-model capability state without inventing a target."""
+    df = require_data()
+    if df is None:
+        return
+    page_header("Quality Prediction", "QUALITY · CAPABILITY STATUS", "Review the material and rolling inputs available for quality modelling.")
+    st.markdown('<div class="alert-card"><strong>Quality model unavailable</strong><br><span class="muted">The supplied dataset has no measured continuous quality target or approved quality class. A quality prediction would be fabricated, so this platform does not create one.</span></div>', unsafe_allow_html=True)
+    metric_grid([
+        ("Quality target", "Not supplied", "No label for supervised quality training", "warning"),
+        ("Material inputs", "Available", "Thickness, width, yield strength", ""),
+        ("Rolling inputs", "Available", "Reduction, force, torque, gap", ""),
+        ("Model status", "Not trained", "Awaiting governed quality measurements", "warning"),
+    ])
+    section_heading("Available modelling inputs", "dataset schema")
+    grouped = {"Material parameters": ["thickness_entry", "thickness_exit", "width", "ys_entry", "ys_exit"], "Rolling & mechanical parameters": ["reduction_1", "force_1", "torque_1", "gap_1", "motor_power_1"], "Process parameters": ["tension_0", "tension_1", "roll_speed_1", "work_roll_diam_1", "work_roll_mileage_1"]}
+    columns = st.columns(3)
+    for column, (title, fields) in zip(columns, grouped.items()):
+        available = [field for field in fields if field in df.columns]
+        column.markdown(f'<div class="glass-card"><strong>{title}</strong><br><span class="muted">{" · ".join(available)}</span></div>', unsafe_allow_html=True)
+    st.info("To enable this page, add a governed quality target (for example, a validated grade, surface-quality outcome, or measured property), then retrain and validate a dedicated quality model.")
+
+
+def anomaly() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("Saved model artifacts are unavailable. Train the pipeline from Model Training to enable this view.")
+        return
+    result = _predict_frame(df.iloc[-1:].copy(), meta, bundle)
+    status = "ANOMALY" if result["probability"] >= .5 else "NORMAL"
+    page_header("Anomaly Detection", "MODEL OUTPUT · ANOMALY", "Inspect the current saved-model output and the reconstruction-based novelty signal.")
+    metric_grid([
+        ("Anomaly score", f"{result['probability']:.1%}", "Classifier probability", "danger" if status == "ANOMALY" else ""),
+        ("Anomaly status", status, "Threshold: 50% classifier probability", "danger" if status == "ANOMALY" else ""),
+        ("Risk level", result["priority"], "Project-defined maintenance band", "warning" if result["priority"] in {"MEDIUM", "HIGH"} else ""),
+        ("Novelty error", f"{result['error']:.5f}", f"Autoencoder threshold {meta['autoencoder']['threshold']:.5f}", ""),
+    ])
+    gauge = go.Figure(go.Indicator(mode="gauge+number", value=result["probability"] * 100, number={"suffix": "%"}, title={"text": "Latest anomaly probability"}, gauge={"axis": {"range": [0, 100]}, "bar": {"color": "#ff8484" if status == "ANOMALY" else "#64e6de"}, "steps": [{"range": [0, 50], "color": "rgba(116,221,165,.18)"}, {"range": [50, 80], "color": "rgba(255,195,107,.16)"}, {"range": [80, 100], "color": "rgba(255,132,132,.16)"}] }))
+    left, right = st.columns((1, 1.25), gap="large")
+    left.plotly_chart(polish_chart(gauge, 280), use_container_width=True)
+    family_counts = df["fault_family"].value_counts().rename_axis("Fault family").reset_index(name="Records")
+    right.plotly_chart(polish_chart(px.bar(family_counts, x="Fault family", y="Records", color="Fault family", title="Supplied-label distribution", color_discrete_sequence=["#6fe0a9", "#ffad5b", "#ff7b7b", "#b69cff", "#74b8ff"]), 280), use_container_width=True)
+    st.caption("The reconstruction threshold is learned from held-out normal records. Neither output is a certified plant alarm setting.")
+
+
+def maintenance() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("Saved model artifacts are unavailable. Train the pipeline from Model Training to enable this view.")
+        return
+    result = _predict_frame(df.iloc[-1:].copy(), meta, bundle)
+    page_header("Predictive Maintenance", "MAINTENANCE · PRIORITY", "Use project-defined model outputs to focus investigation; do not use them as an operating authorization.")
+    metric_grid([
+        ("Machine health score", f"{result['health']:.1f}/100", "Project-defined composite score", "danger" if result["priority"] == "CRITICAL" else ""),
+        ("Maintenance priority", result["priority"], "Derived from current model output", "warning" if result["priority"] in {"MEDIUM", "HIGH"} else ""),
+        ("Potential fault", result["family"], "Fault-family classifier when anomalous", ""),
+        ("Recommended area", "Investigation", "Review recommended area below", ""),
+    ])
+    section_heading("Recommended investigation", "model-generated guidance")
+    st.markdown(f'<div class="glass-card"><strong>{recommended_area(result["family"] if result["probability"] >= .5 else "Normal")}</strong><br><span class="muted">This is model-generated investigation context, not an OEM maintenance procedure or safety instruction.</span></div>', unsafe_allow_html=True)
+    section_heading("Labelled event queue", "dataset evidence")
+    alerts = alerts_from_frame(df)
+    st.dataframe(alerts.head(100), use_container_width=True, height=320)
+    st.warning("This system is a decision-support prototype. Immediate safety concerns must follow approved plant procedures, OEM limits, and engineering review.")
+
+
+def fault_analysis() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("Saved model artifacts are unavailable. Train the pipeline from Model Training to enable this view.")
+        return
+    result = _predict_frame(df.iloc[-1:].copy(), meta, bundle)
+    page_header("Fault Analysis", "FAULT FAMILY · INVESTIGATION", "Combine the existing fault-family classifier with actual global feature-importance evidence.")
+    status = "No predicted fault" if result["probability"] < .5 else result["family"]
+    metric_grid([("Fault family", status, "Latest record", "danger" if result["probability"] >= .5 else ""), ("Fault confidence", f"{result['probability']:.1%}", "Binary anomaly classifier probability", ""), ("Affected parameters", "Top model features", "Global, not causal", ""), ("Investigation area", "Model guidance", "See recommendation below", "")])
+    importance = pd.DataFrame(meta.get("feature_importance", [])).head(15)
+    left, right = st.columns((1.3, 1), gap="large")
+    left.plotly_chart(polish_chart(px.bar(importance.sort_values("importance"), x="importance", y="feature", orientation="h", title="Global feature contribution", color_discrete_sequence=["#64e6de"])), use_container_width=True)
+    family_counts = df.loc[df["anomaly_present"] == 1, "fault_family"].value_counts().rename_axis("Fault family").reset_index(name="Labelled events")
+    right.plotly_chart(polish_chart(px.pie(family_counts, values="Labelled events", names="Fault family", hole=.58, title="Labelled anomaly families", color_discrete_sequence=["#ffad5b", "#ff7b7b", "#b69cff", "#74b8ff"])), use_container_width=True)
+    st.markdown(f'<div class="glass-card"><strong>Recommended investigation area</strong><br>{recommended_area(result["family"] if result["probability"] >= .5 else "Normal")}</div>', unsafe_allow_html=True)
+
+
+def prediction() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("No saved model artifacts. Open Model Training and train the pipeline first.")
+        return
+    page_header("What-If Simulation", "PREDICTION · MODEL SIMULATION", "Change a copy of the latest recorded process values and compare the existing model output.")
+    base = df.iloc[-1:].copy()
+    baseline = _predict_frame(base, meta, bundle)
+    raw_numeric = [column for column in base.select_dtypes(include=np.number).columns if column not in {"anomaly_present", "batch_id", "batch_row"}]
+    edited = base.copy()
+    with st.form("prediction_form"):
+        st.caption("Inputs begin at the latest dataset record. This is a model simulation, not an operating recommendation.")
+        selected = st.multiselect("Variables to adjust", raw_numeric, default=raw_numeric[:8])
+        controls = st.columns(2)
+        for index, column in enumerate(selected):
+            edited.loc[edited.index[0], column] = controls[index % 2].number_input(column, value=float(base.iloc[0][column]), format="%.6g")
+        submitted = st.form_submit_button("Run simulation", type="primary")
+    if submitted:
+        st.session_state["simulation_result"] = _predict_frame(edited, meta, bundle)
+        st.session_state["simulation_changed"] = selected
+    simulated = st.session_state.get("simulation_result")
+    if simulated:
+        delta = simulated["probability"] - baseline["probability"]
+        metric_grid([
+            ("Current prediction", f"{baseline['probability']:.1%}", f"Health {baseline['health']:.1f}/100", ""),
+            ("Simulated prediction", f"{simulated['probability']:.1%}", f"Health {simulated['health']:.1f}/100", "danger" if simulated["probability"] >= .5 else ""),
+            ("Prediction change", f"{delta:+.1%}", "Simulated minus current", "warning" if delta > 0 else ""),
+            ("Risk change", f"{baseline['priority']} → {simulated['priority']}", "Project-defined priority bands", ""),
+        ])
+        changed = st.session_state.get("simulation_changed", [])
+        st.info(f"Changed features: {', '.join(changed) if changed else 'None'}. Important global features remain available in Explainable AI.")
+
+
+def simulator() -> None:
+    prediction()
+
+
+def evaluation() -> None:
+    meta = metadata()
+    if not meta:
+        st.warning("Train models to populate measured evaluation results.")
+        return
+    page_header("Model Performance", "VALIDATION · MEASURED METRICS", "Measured holdout performance for the saved anomaly model; no metrics are fabricated.")
+    metrics = meta["best_metrics"]
+    metric_grid([("Accuracy", f"{metrics['accuracy']:.1%}", "Holdout set", ""), ("Precision", f"{metrics['precision']:.1%}", "Anomaly class", ""), ("Recall", f"{metrics['recall']:.1%}", "Anomaly class", "warning"), ("F1 score", f"{metrics['f1']:.1%}", "Anomaly class", ""), ("ROC-AUC", f"{metrics['roc_auc']:.3f}", "Holdout set", ""), ("PR-AUC", f"{metrics['pr_auc']:.3f}", "Holdout set", ""), ("Balanced accuracy", f"{metrics['balanced_accuracy']:.1%}", "Holdout set", "")])
+    comparison = pd.DataFrame(meta["comparison"])
+    left, right = st.columns((1.2, 1), gap="large")
+    left.plotly_chart(polish_chart(px.bar(comparison, x="model", y=["f1", "pr_auc", "roc_auc"], barmode="group", title="Measured model comparison", color_discrete_sequence=["#64e6de", "#ffad5b", "#74b8ff"])), use_container_width=True)
+    matrix = np.asarray(meta["confusion_matrix"])
+    right.plotly_chart(polish_chart(go.Figure(go.Heatmap(z=matrix, x=["Predicted normal", "Predicted anomaly"], y=["Actual normal", "Actual anomaly"], text=matrix, texttemplate="%{text}", colorscale=[[0, "#102938"], [1, "#64e6de"]], showscale=False)).update_layout(title="Holdout confusion matrix")), use_container_width=True)
+    section_heading("Feature importance", "saved selected model")
+    importance = pd.DataFrame(meta["feature_importance"]).head(20)
+    st.plotly_chart(polish_chart(px.bar(importance.sort_values("importance"), x="importance", y="feature", orientation="h", title="Global native feature importance", color_discrete_sequence=["#64e6de"])), use_container_width=True)
+    st.caption(meta["validation_strategy"])
+
+
+def explainability() -> None:
+    """Show stored model evidence and optional, real TreeSHAP calculations."""
+    meta = metadata()
+    if not meta:
+        st.warning("Train the pipeline first to create explainability metadata.")
+        return
+    page_header("Explainable AI", "MODEL INTERPRETATION", "See what influenced the anomaly model through saved native importance and optional TreeSHAP evidence.")
+    importance = pd.DataFrame(meta.get("feature_importance", []))
+    if importance.empty:
+        st.info("The selected model did not expose native feature importance.")
+        return
+    metric_grid([
+        ("Explanation source", "Native + TreeSHAP", "TreeSHAP is calculated on demand", ""),
+        ("Global features", str(len(importance)), "Saved model importance entries", ""),
+        ("Individual view", "On demand", "Latest-record TreeSHAP values", ""),
+        ("Interpretation", "Non-causal", "Evidence, not a process cause", "warning"),
+    ])
+    tabs = st.tabs(["Global feature importance", "Individual prediction explanation"])
+    with tabs[0]:
+        st.plotly_chart(polish_chart(px.bar(importance.head(20).sort_values("importance"), x="importance", y="feature", orientation="h", title="Global native feature importance", color_discrete_sequence=["#64e6de"])), use_container_width=True)
+        st.caption("Native importance is saved during model training and is available without recomputing the model.")
+    with tabs[1]:
+        st.caption("TreeSHAP is optional and calculated from the existing saved tree model; no surrogate or fake contribution values are used.")
+        if st.button("Calculate latest-record TreeSHAP explanation", type="primary"):
+            try:
+                from src.explainability import shap_values_for_tree_pipeline
+
+                df = require_data()
+                bundle = model_bundle()
+                if df is not None and bundle:
+                    values, names = shap_values_for_tree_pipeline(bundle[0], build_features(df.tail(300)).reindex(columns=meta["features"]))
+                    st.session_state["tree_shap_latest"] = (values, names)
+            except ImportError as exc:
+                st.info(str(exc))
+            except Exception as exc:
+                st.error(f"TreeSHAP calculation was unavailable: {exc}")
+        cached_shap = st.session_state.get("tree_shap_latest")
+        if cached_shap:
+            values, names = cached_shap
+            local = pd.DataFrame({"feature": names, "SHAP contribution": values[-1]}).sort_values("SHAP contribution")
+            left, right = st.columns((1, 1), gap="large")
+            left.plotly_chart(polish_chart(px.bar(local.head(12), x="SHAP contribution", y="feature", orientation="h", title="Negative contribution", color_discrete_sequence=["#ff8484"]), 360), use_container_width=True)
+            right.plotly_chart(polish_chart(px.bar(local.tail(12), x="SHAP contribution", y="feature", orientation="h", title="Positive contribution", color_discrete_sequence=["#64e6de"]), 360), use_container_width=True)
+            st.caption("Contributions describe the selected model's output for the last sampled record. They do not establish physical causation.")
+
+
+def monitoring() -> None:
+    """Mill-intelligence view based entirely on the latest supplied dataset record."""
+    df = require_data()
+    if df is None:
+        return
+    page_header("Mill Intelligence", "PROCESS · FIVE-STAND TANDEM MILL", "Review key process parameters across the tandem mill using the supplied dataset, not a live plant connection.")
+    latest = df.iloc[-1]
+    def value(name: str, digits: int = 3) -> str:
+        raw = latest.get(name, np.nan)
+        return "—" if pd.isna(raw) else f"{float(raw):,.{digits}f}"
+    metric_grid([
+        ("Entry thickness", value("thickness_entry"), "Dataset units not supplied", ""),
+        ("Exit thickness", value("thickness_exit"), "Dataset units not supplied", ""),
+        ("Total reduction", value("total_reduction_ratio"), "Derived model feature", ""),
+        ("Mean motor power", value("motor_power_mean"), "Derived model feature", ""),
+    ])
+    section_heading("Tandem process path", "latest dataset record")
+    cards = ["Entry"] + [f"Stand {stand}" for stand in range(1, 6)] + ["Exit"]
+    st.markdown('<div class="process">' + ''.join(f'<div class="stand">{card}<br><small class="muted">recorded view</small></div>' + ('' if index == len(cards) - 1 else '<div class="arrow">→</div>') for index, card in enumerate(cards)) + '</div>', unsafe_allow_html=True)
+    rows = []
+    for stand in range(1, 6):
+        rows.append({"Stand": f"Stand {stand}", "Reduction": value(f"reduction_{stand}"), "Rolling force": value(f"force_{stand}"), "Torque": value(f"torque_{stand}"), "Roll speed": value(f"roll_speed_{stand}"), "Roll gap": value(f"gap_{stand}"), "Motor power": value(f"motor_power_{stand}")})
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption("Values are a Model / Dataset View. The source does not provide units, timestamps, or a real-time connection.")
+    section_heading("Operational signal explorer", "recorded history")
+    groups = feature_groups(df)
+    group = st.selectbox("Signal family", list(groups))
+    signals = groups[group]
+    window = st.slider("Recent observations", 100, min(3000, len(df)), min(800, len(df)), step=100)
+    plot = df.tail(window).copy()
+    plot["record"] = np.arange(len(plot))
+    st.plotly_chart(polish_chart(px.line(plot, x="record", y=signals, title=f"{group} across available stands", color_discrete_sequence=["#64e6de", "#74b8ff", "#ffad5b", "#b69cff", "#6fe0a9"])), use_container_width=True)
