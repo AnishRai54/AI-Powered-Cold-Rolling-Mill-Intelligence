@@ -35,6 +35,12 @@ TOOLS_PAGES = {
 with st.sidebar:
     st.markdown('''<div class="brand"><div class="brand-mark">M</div><div><div class="brand-title">MILL INTELLIGENCE</div><div class="brand-sub">AI COMMAND CENTER · V1.1</div></div></div>''', unsafe_allow_html=True)
     st.markdown('<div class="nav-caption">Industrial intelligence</div>', unsafe_allow_html=True)
+    st.selectbox(
+        "User mode",
+        ["Simple", "Engineer"],
+        help="Simple mode explains results in plain language. Engineer mode exposes detailed process and model information.",
+        key="user_mode",
+    )
     primary_choice = st.radio("Primary navigation", list(PRIMARY_PAGES), label_visibility="collapsed", key="primary_navigation")
     st.markdown('<div class="nav-caption">Workspace & tools</div>', unsafe_allow_html=True)
     tool_choice = st.radio("Workspace tools", ["None"] + list(TOOLS_PAGES), label_visibility="collapsed", key="workspace_tools")

@@ -120,7 +120,7 @@ def polish_chart(figure: go.Figure, height: int = 330) -> go.Figure:
     return figure
 
 
-def dashboard() -> None:
+def friendly_dashboard_view() -> None:
     df = require_data()
     if df is None: return
     hero(); current = recent_prediction(df); profile = profile_dataset(df)
@@ -174,8 +174,208 @@ def monitoring() -> None:
     window = st.slider("Recent observations", 100, min(3000, len(df)), min(800, len(df)), step=100)
     plot = df.tail(window).copy(); plot["record"] = np.arange(len(plot))
     st.plotly_chart(polish_chart(px.line(plot, x="record", y=signals, title=f"{group} across available stands", color_discrete_sequence=["#64e6de", "#74b8ff", "#ffad5b", "#b69cff", "#6fe0a9"])), use_container_width=True)
-    if signals: st.plotly_chart(polish_chart(px.box(df.sample(min(10000,len(df)), random_state=42), y=signals, color="fault_family", title="Distribution by fault family", color_discrete_sequence=["#6fe0a9", "#ffad5b", "#ff7b7b", "#b69cff", "#74b8ff"])), use_container_width=True)
-    st.info("Charts show recorded dataset variables. They are not live plant control signals.")
+
+
+def simple_mode() -> bool:
+    """Return whether the visitor opted into the plain-language interface."""
+    return st.session_state.get("user_mode", "Simple") == "Simple"
+
+
+def friendly_feature_name(feature: str) -> str:
+    names = {
+        "thickness_entry": "Entry thickness", "thickness_exit": "Exit thickness",
+        "roll_speed": "Roll speed", "motor_power": "Motor power",
+        "work_roll_diam": "Work roll diameter", "work_roll_mileage": "Work roll mileage",
+        "force": "Rolling force", "torque": "Rolling torque", "gap": "Roll gap",
+        "reduction": "Thickness reduction", "tension": "Strip tension",
+    }
+    for prefix, label in names.items():
+        if feature.startswith(prefix):
+            suffix = feature.removeprefix(prefix).strip("_")
+            return f"{label} {suffix}" if suffix and suffix not in {"mean", "max", "ratio"} else f"{label} {suffix}".strip()
+    return feature.replace("_", " ").title()
+
+
+def technical_help(feature: str) -> str:
+    descriptions = {
+        "thickness_entry": "Thickness of the strip before it enters the rolling mill.",
+        "thickness_exit": "Thickness of the strip after rolling. In a reduction process it is normally lower than entry thickness.",
+        "force": "Force applied by the rolls to reduce strip thickness.",
+        "torque": "Turning effort required to rotate the rolls.",
+        "roll_speed": "Speed at which the rolls move the strip through a stand.",
+        "gap": "Distance between the working rolls at a stand.",
+        "motor_power": "Power used by the drive motor at a stand.",
+        "tension": "Pulling force that keeps the strip stable between stands.",
+        "reduction": "Amount of thickness reduction applied at a stand.",
+        "work_roll_diam": "Diameter of the work roll in contact with the strip.",
+    }
+    return next((text for prefix, text in descriptions.items() if feature.startswith(prefix)), "Dataset-derived process input used by the saved model.")
+
+
+def status_copy(probability: float, priority: str) -> tuple[str, str, str, str]:
+    if priority == "CRITICAL":
+        return "CRITICAL", "Immediate investigation recommended by the model", "The model detected strongly unusual operating conditions. Follow approved site procedures and engineering review.", "danger"
+    if probability >= .5 or priority in {"HIGH", "MEDIUM"}:
+        return "WARNING", "Some parameters need attention", "The model found conditions that differ from its learned normal patterns. Review the suggested investigation area.", "warning"
+    return "NORMAL", "Operating conditions look expected", "Based on the supplied operating conditions, the model does not detect a strong anomaly.", ""
+
+
+def dashboard_help() -> None:
+    with st.expander("Understanding this dashboard"):
+        st.markdown("""
+**What is cold rolling?** Steel strip is passed through rolls to make it thinner and achieve the required shape or properties.
+
+**What is a rolling stand?** A rolling stand is one set of rolls in the mill. This dataset represents five stands working in sequence.
+
+**What is rolling force and strip tension?** Rolling force reduces thickness; strip tension keeps material stable between stands.
+
+**What is anomaly detection?** It highlights operating conditions that differ from patterns learned from normal dataset records.
+
+**What is predictive maintenance?** It uses model outputs to guide where to investigate. It is not an OEM maintenance instruction.
+
+**What are machine learning, SHAP, and reconstruction error?** Machine learning finds patterns in examples. SHAP explains a model's feature contributions. Reconstruction error is a technical novelty signal; both are available in Engineer mode.
+        """)
+
+
+def user_friendly_dashboard() -> None:
+    df = require_data()
+    meta = metadata()
+    if df is None:
+        return
+    current = recent_prediction(df)
+    probability = 0.0 if np.isnan(current["probability"]) else current["probability"]
+    title, subtitle, explanation, tone = status_copy(probability, current["priority"])
+    hero()
+    if simple_mode() and not st.session_state.get("welcome_dismissed", False):
+        st.info("Welcome to Cold Rolling Mill Intelligence. Use this dashboard to see whether conditions look expected and where the model suggests attention.")
+        welcome_left, welcome_right, _ = st.columns((1, 1, 4))
+        welcome_left.button("Start Analysis", key="start_analysis", on_click=_navigate_primary, args=("What-If Simulation",))
+        welcome_right.button("Dismiss", key="dismiss_welcome", on_click=lambda: st.session_state.update(welcome_dismissed=True))
+    st.markdown(f'<section class="status-summary {tone}"><div class="status-summary-title">Mill status</div><h2>{title}</h2><strong>{subtitle}</strong><p>{explanation}</p></section>', unsafe_allow_html=True)
+    quality_note = "Quality model unavailable" if simple_mode() else "No measured quality target supplied"
+    metric_grid([
+        ("Mill health", "—" if np.isnan(current["health"]) else f"{current['health']:.1f}/100", "A project-defined overall condition indicator", tone),
+        ("Anomaly risk", "—" if np.isnan(current["probability"]) else f"{current['probability']:.1%}", "How unusual conditions appear compared with learned normal data", tone),
+        ("Quality", "Not available", quality_note, "warning"),
+        ("Maintenance", current["priority"], "AI-assisted investigation priority, not a plant safety classification", tone),
+    ])
+    st.markdown('<div class="workflow">' + ''.join(f'<div class="workflow-step"><strong>STEP {index}</strong>{label}</div>' + ('' if index == 6 else '<div class="workflow-arrow">→</div>') for index, label in enumerate(["Enter conditions", "Run AI analysis", "Review health", "Check quality", "Review anomaly risk", "Review guidance"], start=1)) + '</div>', unsafe_allow_html=True)
+    if probability >= .5:
+        area = recommended_area("Normal")
+        st.warning(f"AI-assisted investigation guidance: {area}. This is not a certified maintenance procedure.")
+    else:
+        st.success("No strong anomaly is detected for the latest dataset record. Continue normal engineering review and monitoring.")
+    if meta:
+        factors = ", ".join(friendly_feature_name(item["feature"]) for item in meta.get("feature_importance", [])[:3])
+        st.info(f"Why this result? The saved model generally gives the most weight to {factors}. Open Explainable AI for the full evidence.")
+    dashboard_help()
+    if not simple_mode():
+        section_heading("Engineer view", "dataset signals and process path")
+        cards = ["Entry coil"] + [f"Stand {index}" for index in range(1, 6)] + ["Exit coil"]
+        flow = "".join(f'<div class="stand">{card}<br><small class="muted">dataset-driven</small></div>' + ("" if index == len(cards) - 1 else '<div class="arrow">→</div>') for index, card in enumerate(cards))
+        st.markdown(f'<div class="process">{flow}</div>', unsafe_allow_html=True)
+        with st.expander("Technical details"):
+            st.write({"model_status": current["status"], "classification_probability": current["probability"], "reconstruction_error": current["error"], "model_priority": current["priority"]})
+
+
+def friendly_quality_view() -> None:
+    df = require_data()
+    if df is None:
+        return
+    page_header("Quality Check", "QUALITY · CAPABILITY STATUS", "See whether a measured quality prediction is available for this dataset.")
+    st.markdown('<section class="status-summary warning"><div class="status-summary-title">Quality status</div><h2>NOT AVAILABLE</h2><strong>A quality outcome has not been supplied</strong><p>The dataset has process inputs but no approved measured quality result. The app therefore does not make up a quality prediction.</p></section>', unsafe_allow_html=True)
+    st.info("To enable quality prediction, add governed quality measurements such as a validated grade, surface outcome, or measured material property, then train and validate a dedicated model.")
+    if not simple_mode():
+        with st.expander("Technical details"):
+            st.write("Available inputs include material thickness, reductions, rolling force, torque, tension, speed, roll gap, and motor power. No continuous quality target is present.")
+
+
+def friendly_prediction_view() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("AI analysis is unavailable because saved model files could not be loaded. Please contact the administrator or train the model from the tools section.")
+        return
+    page_header("Run AI Analysis", "GUIDED ANALYSIS", "Start with the latest dataset values, change the conditions you want to explore, then review the result in plain language.")
+    base = df.iloc[-1:].copy()
+    baseline = _predict_frame(base, meta, bundle)
+    simple_fields = [field for field in ["thickness_entry", "thickness_exit", "reduction_1", "force_1", "roll_speed_1", "torque_1", "motor_power_1", "tension_0"] if field in base.columns]
+    numeric_fields = [column for column in base.select_dtypes(include=np.number).columns if column not in {"anomaly_present", "batch_id", "batch_row"}]
+    edited = base.copy()
+    with st.form("friendly_prediction_form"):
+        st.caption("Smart defaults are taken from the latest supplied dataset record. Typical ranges are dataset ranges, not engineering limits.")
+        if simple_mode():
+            fields = simple_fields
+            st.subheader("Material and rolling conditions")
+        else:
+            fields = st.multiselect("Parameters to adjust", numeric_fields, default=simple_fields, help="Choose the process values to change for this what-if analysis.")
+            st.subheader("Selected process conditions")
+        controls = st.columns(2)
+        for index, field in enumerate(fields):
+            minimum, maximum, current_value = float(df[field].min()), float(df[field].max()), float(base.iloc[0][field])
+            controls[index % 2].caption(f"Typical dataset range: {minimum:.4g} – {maximum:.4g} · Current: {current_value:.4g}")
+            edited.loc[edited.index[0], field] = controls[index % 2].number_input(friendly_feature_name(field), min_value=minimum, max_value=maximum, value=current_value, format="%.6g", help=technical_help(field))
+        submitted = st.form_submit_button("Run AI Analysis", type="primary")
+    invalid_thickness = edited.iloc[0].get("thickness_exit", 0) > edited.iloc[0].get("thickness_entry", 0)
+    if submitted and invalid_thickness:
+        st.warning("Please check the thickness values. Exit thickness is normally expected to be lower than entry thickness for a reduction process.")
+    elif submitted:
+        with st.spinner("Analyzing operating conditions..."):
+            st.session_state["friendly_simulation"] = _predict_frame(edited, meta, bundle)
+            st.session_state["friendly_changed_features"] = fields
+    result = st.session_state.get("friendly_simulation")
+    if result:
+        title, subtitle, explanation, tone = status_copy(result["probability"], result["priority"])
+        st.markdown(f'<section class="status-summary {tone}"><div class="status-summary-title">AI analysis result</div><h2>{title}</h2><strong>{subtitle}</strong><p>{explanation}</p></section>', unsafe_allow_html=True)
+        metric_grid([
+            ("Mill health", f"{result['health']:.1f}/100", "Project-defined condition indicator", tone),
+            ("Anomaly risk", f"{result['probability']:.1%}", "How unusual the conditions appear", tone),
+            ("Maintenance attention", result["priority"], "Model-led investigation priority", tone),
+            ("Quality", "Not available", "No measured quality target was supplied", "warning"),
+        ])
+        factors = ", ".join(friendly_feature_name(item["feature"]) for item in meta.get("feature_importance", [])[:3])
+        st.info(f"Why? The saved model generally gives most weight to {factors}. These are model evidence, not confirmed physical causes.")
+        if result["probability"] >= .5:
+            st.warning(f"AI-assisted investigation guidance: {recommended_area(result['family'])}")
+        if not simple_mode():
+            with st.expander("Technical details"):
+                st.write({"baseline_probability": baseline["probability"], "simulated_probability": result["probability"], "reconstruction_error": result["error"], "fault_family": result["family"], "changed_features": st.session_state.get("friendly_changed_features", [])})
+
+
+def friendly_anomaly_view() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("Anomaly checking is unavailable because saved model files could not be loaded.")
+        return
+    result = _predict_frame(df.iloc[-1:].copy(), meta, bundle)
+    title, subtitle, explanation, tone = status_copy(result["probability"], result["priority"])
+    page_header("Check Anomaly", "AI ANALYSIS · OPERATING CONDITIONS", "Find out whether the latest dataset conditions look unusual to the saved model.")
+    st.markdown(f'<section class="status-summary {tone}"><div class="status-summary-title">Anomaly check</div><h2>{title}</h2><strong>{subtitle}</strong><p>{explanation}</p></section>', unsafe_allow_html=True)
+    metric_grid([("Anomaly risk score", f"{result['probability']:.1%}", "Shows how unusual current conditions appear compared with normal data", tone), ("Maintenance attention", result["priority"], "Suggested review priority", tone), ("Likely investigation", result["family"], "Available when the model finds an anomaly", ""), ("Quality", "Not available", "No measured quality outcome in this dataset", "warning")])
+    if not simple_mode():
+        with st.expander("Technical details"):
+            st.write({"classifier_probability": result["probability"], "reconstruction_error": result["error"], "reconstruction_threshold": meta["autoencoder"]["threshold"]})
+
+
+def friendly_maintenance_view() -> None:
+    df = require_data()
+    meta = metadata()
+    bundle = model_bundle()
+    if df is None or not meta or not bundle:
+        st.warning("Maintenance guidance is unavailable because saved model files could not be loaded.")
+        return
+    result = _predict_frame(df.iloc[-1:].copy(), meta, bundle)
+    title, subtitle, explanation, tone = status_copy(result["probability"], result["priority"])
+    page_header("Maintenance Guidance", "AI-ASSISTED INVESTIGATION", "Use the model output to focus inspection discussion. It does not replace approved maintenance procedures.")
+    st.markdown(f'<section class="status-summary {tone}"><div class="status-summary-title">Maintenance status</div><h2>{result["priority"]}</h2><strong>{subtitle}</strong><p>{explanation}</p></section>', unsafe_allow_html=True)
+    area = recommended_area(result["family"] if result["probability"] >= .5 else "Normal")
+    st.markdown(f'<div class="glass-card"><strong>AI-assisted investigation guidance</strong><br>{area}<br><span class="muted">This is model-generated context, not a certified maintenance procedure or safety instruction.</span></div>', unsafe_allow_html=True)
+    if not simple_mode():
+        with st.expander("Technical details"):
+            st.write({"health_score": result["health"], "anomaly_probability": result["probability"], "fault_family": result["family"], "reconstruction_error": result["error"]})
 
 
 def anomaly() -> None:
