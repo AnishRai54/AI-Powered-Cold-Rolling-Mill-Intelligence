@@ -1,4 +1,6 @@
 # AI-Powered Cold Rolling Mill Intelligence
+https://ai-powered-cold-rolling-mill-intelligence.streamlit.app/
+
 
 An industrial-AI portfolio prototype for monitoring a five-stand tandem cold rolling mill, detecting supplied anomaly labels, estimating reconstruction-based novelty, and surfacing maintenance investigation context in Streamlit.
 
